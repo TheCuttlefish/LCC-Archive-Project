@@ -1,0 +1,189 @@
+import bpy
+import os
+
+# ===========================
+# SETTINGS
+# ===========================
+
+TEXTURE_SIZE = 4096
+CAGE_EXTRUSION = 0.5
+
+downloads = os.path.join(os.path.expanduser("~"), "Downloads")
+
+# ===========================
+# GET SELECTED LOW-POLY OBJECT
+# ===========================
+
+low = bpy.context.active_object
+
+if low is None:
+    raise Exception("No object selected. Select the LOW-POLY mesh first.")
+
+if low.type != 'MESH':
+    raise Exception("Selected object is not a mesh.")
+
+print("Selected low-poly object:", low.name)
+
+# ===========================
+# FIND HIGH-POLY SOURCE IN SCENE
+# ===========================
+
+mesh_objects = [
+    obj for obj in bpy.context.scene.objects
+    if obj.type == 'MESH' and obj != low
+]
+
+if len(mesh_objects) == 0:
+    raise Exception("No high-poly mesh found. Keep the original high-poly mesh in the scene.")
+
+# Pick the mesh with the highest polygon count as the high-poly source
+high = max(mesh_objects, key=lambda obj: len(obj.data.polygons))
+
+print("High-poly source found:", high.name)
+
+# ===========================
+# MAKE SURE OBJECT MODE
+# ===========================
+
+if bpy.ops.object.mode_set.poll():
+    bpy.ops.object.mode_set(mode='OBJECT')
+
+# ===========================
+# SMART UV ON LOW-POLY
+# ===========================
+
+bpy.ops.object.select_all(action='DESELECT')
+
+low.select_set(True)
+bpy.context.view_layer.objects.active = low
+
+bpy.ops.object.mode_set(mode='EDIT')
+
+bpy.ops.mesh.select_all(action='SELECT')
+
+bpy.ops.uv.smart_project()
+
+print("UV Unwrapped.")
+
+bpy.ops.object.mode_set(mode='OBJECT')
+
+# ===========================
+# MATERIAL
+# ===========================
+
+mat = bpy.data.materials.new(low.name + "_Material")
+mat.use_nodes = True
+
+low.data.materials.clear()
+low.data.materials.append(mat)
+
+nodes = mat.node_tree.nodes
+links = mat.node_tree.links
+
+principled = None
+
+for n in nodes:
+    if n.type == 'BSDF_PRINCIPLED':
+        principled = n
+
+if principled is None:
+    raise Exception("No Principled BSDF node found.")
+
+# ===========================
+# IMAGE
+# ===========================
+
+image = bpy.data.images.new(
+    low.name + "_MAP",
+    width=TEXTURE_SIZE,
+    height=TEXTURE_SIZE
+)
+
+tex = nodes.new("ShaderNodeTexImage")
+tex.image = image
+
+tex.location = (-500, 300)
+
+links.new(tex.outputs["Color"], principled.inputs["Base Color"])
+
+nodes.active = tex
+
+print("Material created.")
+
+# ===========================
+# RENDER SETTINGS
+# ===========================
+
+scene = bpy.context.scene
+
+scene.render.engine = 'CYCLES'
+
+scene.cycles.bake_type = 'DIFFUSE'
+
+scene.render.bake.use_selected_to_active = True
+scene.render.bake.cage_extrusion = CAGE_EXTRUSION
+
+scene.render.bake.use_pass_direct = False
+scene.render.bake.use_pass_indirect = False
+scene.render.bake.use_pass_color = True
+
+print("Bake settings ready.")
+
+# ===========================
+# SELECT HIGH SOURCE + LOW TARGET
+# ===========================
+
+bpy.ops.object.select_all(action='DESELECT')
+
+# Select high first
+high.select_set(True)
+
+# Select low second and make active
+low.select_set(True)
+bpy.context.view_layer.objects.active = low
+
+print("Objects selected for baking.")
+print("Source high-poly:", high.name)
+print("Target low-poly:", low.name)
+
+# ===========================
+# BAKE
+# ===========================
+
+print("Baking...")
+
+bpy.ops.object.bake(type='DIFFUSE')
+
+print("Bake finished.")
+
+# ===========================
+# SAVE IMAGE
+# ===========================
+
+image.filepath_raw = os.path.join(downloads, low.name + "_MAP.png")
+image.file_format = 'PNG'
+
+image.save()
+
+print("Image saved.")
+
+# ===========================
+# EXPORT LOW-POLY FBX
+# ===========================
+
+bpy.ops.object.select_all(action='DESELECT')
+
+low.select_set(True)
+
+bpy.context.view_layer.objects.active = low
+
+export_path = os.path.join(downloads, low.name + ".fbx")
+
+bpy.ops.export_scene.fbx(
+    filepath=export_path,
+    use_selection=True
+)
+
+print("FBX exported.")
+
+print("DONE!")
