@@ -1,12 +1,19 @@
 import bpy
 import os
+import math
 
 # ===========================
 # SETTINGS
 # ===========================
 
 TEXTURE_SIZE = 4096
-CAGE_EXTRUSION = 0.5
+CAGE_EXTRUSION = 0.2
+
+FILL_HOLES = True
+FILL_HOLE_SIDES = 12
+
+LIMITED_DISSOLVE = True
+LIMITED_DISSOLVE_ANGLE_DEGREES = 7
 
 downloads = os.path.join(os.path.expanduser("~"), "Downloads")
 
@@ -49,7 +56,7 @@ if bpy.ops.object.mode_set.poll():
     bpy.ops.object.mode_set(mode='OBJECT')
 
 # ===========================
-# SMART UV ON LOW-POLY
+# SELECT LOW-POLY FOR CLEANUP
 # ===========================
 
 bpy.ops.object.select_all(action='DESELECT')
@@ -58,6 +65,33 @@ low.select_set(True)
 bpy.context.view_layer.objects.active = low
 
 bpy.ops.object.mode_set(mode='EDIT')
+bpy.ops.mesh.select_all(action='SELECT')
+
+# ===========================
+# FILL SMALL HOLES
+# ===========================
+
+if FILL_HOLES:
+    bpy.ops.mesh.fill_holes(sides=FILL_HOLE_SIDES)
+    print("Small holes filled.")
+
+# ===========================
+# LIMITED DISSOLVE
+# ===========================
+
+if LIMITED_DISSOLVE:
+    angle_radians = math.radians(LIMITED_DISSOLVE_ANGLE_DEGREES)
+
+    bpy.ops.mesh.dissolve_limited(
+        angle_limit=angle_radians,
+        use_dissolve_boundaries=False
+    )
+
+    print("Limited Dissolve applied.")
+
+# ===========================
+# SMART UV ON LOW-POLY
+# ===========================
 
 bpy.ops.mesh.select_all(action='SELECT')
 
