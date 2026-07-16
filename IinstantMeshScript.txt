@@ -9,11 +9,13 @@ import math
 TEXTURE_SIZE = 4096
 CAGE_EXTRUSION = 0.2
 
-FILL_HOLES = True
+FILL_HOLES = False
 FILL_HOLE_SIDES = 12
 
 LIMITED_DISSOLVE = True
 LIMITED_DISSOLVE_ANGLE_DEGREES = 7
+
+JPEG_QUALITY = 95
 
 downloads = os.path.join(os.path.expanduser("~"), "Downloads")
 
@@ -30,6 +32,9 @@ if low.type != 'MESH':
     raise Exception("Selected object is not a mesh.")
 
 print("Selected low-poly object:", low.name)
+
+# Safe filename for saving image/FBX
+safe_name = bpy.path.clean_name(low.name)
 
 # ===========================
 # FIND HIGH-POLY SOURCE IN SCENE
@@ -74,6 +79,8 @@ bpy.ops.mesh.select_all(action='SELECT')
 if FILL_HOLES:
     bpy.ops.mesh.fill_holes(sides=FILL_HOLE_SIDES)
     print("Small holes filled.")
+else:
+    print("Fill holes skipped.")
 
 # ===========================
 # LIMITED DISSOLVE
@@ -88,6 +95,8 @@ if LIMITED_DISSOLVE:
     )
 
     print("Limited Dissolve applied.")
+else:
+    print("Limited Dissolve skipped.")
 
 # ===========================
 # SMART UV ON LOW-POLY
@@ -128,7 +137,7 @@ if principled is None:
 # ===========================
 
 image = bpy.data.images.new(
-    low.name + "_MAP",
+    safe_name + "_MAP",
     width=TEXTURE_SIZE,
     height=TEXTURE_SIZE
 )
@@ -140,6 +149,11 @@ tex.location = (-500, 300)
 
 links.new(tex.outputs["Color"], principled.inputs["Base Color"])
 
+# Make sure this image node is the active bake target
+for n in nodes:
+    n.select = False
+
+tex.select = True
 nodes.active = tex
 
 print("Material created.")
@@ -191,13 +205,22 @@ bpy.ops.object.bake(type='DIFFUSE')
 print("Bake finished.")
 
 # ===========================
-# SAVE IMAGE
+# SAVE IMAGE AS JPEG
 # ===========================
 
-image.filepath_raw = os.path.join(downloads, low.name + "_MAP.png")
-image.file_format = 'PNG'
+image_path = os.path.join(downloads, safe_name + "_MAP.jpg")
 
-image.save()
+print("IMAGE SAVE PATH IS:")
+print(image_path)
+
+image.filepath_raw = image_path
+image.file_format = 'JPEG'
+
+try:
+    image.save(quality=JPEG_QUALITY)
+except TypeError:
+    # Some Blender versions do not support quality argument here
+    image.save()
 
 print("Image saved.")
 
@@ -211,7 +234,10 @@ low.select_set(True)
 
 bpy.context.view_layer.objects.active = low
 
-export_path = os.path.join(downloads, low.name + ".fbx")
+export_path = os.path.join(downloads, safe_name + ".fbx")
+
+print("FBX EXPORT PATH IS:")
+print(export_path)
 
 bpy.ops.export_scene.fbx(
     filepath=export_path,
