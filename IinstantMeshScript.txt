@@ -16,7 +16,7 @@ LIMITED_DISSOLVE = True
 LIMITED_DISSOLVE_ANGLE_DEGREES = 7
 
 JPEG_QUALITY = 95
-
+AUTO_UV_UNWRAP = False
 downloads = os.path.join(os.path.expanduser("~"), "Downloads")
 
 # ===========================
@@ -99,14 +99,17 @@ else:
     print("Limited Dissolve skipped.")
 
 # ===========================
-# SMART UV ON LOW-POLY
+# UV UNWRAP
 # ===========================
 
-bpy.ops.mesh.select_all(action='SELECT')
+if AUTO_UV_UNWRAP:
+    bpy.ops.mesh.select_all(action='SELECT')
+    bpy.ops.uv.smart_project()
 
-bpy.ops.uv.smart_project()
-
-print("UV Unwrapped.")
+    print("Automatic Smart UV Unwrap applied.")
+else:
+    print("Automatic UV unwrap skipped.")
+    print("Using existing/manual UV layout.")
 
 bpy.ops.object.mode_set(mode='OBJECT')
 
