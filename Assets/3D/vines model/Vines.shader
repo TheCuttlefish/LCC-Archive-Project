@@ -1,4 +1,4 @@
-Shader "Custom/Vines_DitherCutout_Modes"
+Shader "Custom/Vines_DitherCutout_Modes_Wind"
 {
     Properties
     {
@@ -12,7 +12,7 @@ Shader "Custom/Vines_DitherCutout_Modes"
 
         _DitherScale ("Dither Scale", Range(0.25,4)) = 1
 
-        // 0 = Current Noise
+        // 0 = Hash
         // 1 = Bayer 4x4
         // 2 = Blue Noise
         _DitherMode ("Dither Mode", Range(0,2)) = 1
@@ -21,6 +21,23 @@ Shader "Custom/Vines_DitherCutout_Modes"
 
         _Metallic ("Metallic", Range(0,1)) = 0
         _Smoothness ("Smoothness", Range(0,1)) = 0
+
+        // -----------------------------
+        // WIND
+        // -----------------------------
+
+        _WindStrength ("Wind Strength", Range(0,0.5)) = 0.05
+        _WindSpeed ("Wind Speed", Range(0,10)) = 1.5
+        _WindFrequency ("Wind Frequency", Range(0.1,10)) = 2.0
+
+        _WindDirectionX ("Wind Direction X", Range(-1,1)) = 1
+        _WindDirectionZ ("Wind Direction Z", Range(-1,1)) = 0.3
+
+        _WindVertical ("Vertical Wobble", Range(0,1)) = 0.15
+
+        // 0 = ignore vertex colors
+        // 1 = use vertex color red as wind mask
+        _UseVertexMask ("Use Vertex Color Mask", Range(0,1)) = 0
     }
 
     SubShader
@@ -36,7 +53,7 @@ Shader "Custom/Vines_DitherCutout_Modes"
 
         CGPROGRAM
 
-        #pragma surface surf Standard fullforwardshadows addshadow
+        #pragma surface surf Standard fullforwardshadows addshadow vertex:vert
         #pragma target 3.0
 
         sampler2D _MainTex;
@@ -53,6 +70,15 @@ Shader "Custom/Vines_DitherCutout_Modes"
         half _Metallic;
         half _Smoothness;
 
+        half _WindStrength;
+        half _WindSpeed;
+        half _WindFrequency;
+        half _WindDirectionX;
+        half _WindDirectionZ;
+        half _WindVertical;
+        half _UseVertexMask;
+
+
         struct Input
         {
             float2 uv_MainTex;
@@ -67,7 +93,89 @@ Shader "Custom/Vines_DitherCutout_Modes"
 
 
         // ------------------------------------------------
-        // CURRENT RANDOM / HASH DITHER
+        // VERTEX WIND
+        // ------------------------------------------------
+
+        void vert(inout appdata_full v)
+        {
+            float3 worldPos =
+                mul(unity_ObjectToWorld, v.vertex).xyz;
+
+            float2 windDir =
+                normalize(
+                    float2(
+                        _WindDirectionX,
+                        _WindDirectionZ
+                    ) + 0.0001
+                );
+
+            // World-space phase keeps nearby cards from
+            // all moving in perfect sync.
+            float phase =
+                dot(worldPos.xz, windDir) *
+                _WindFrequency;
+
+            float time =
+                _Time.y * _WindSpeed;
+
+            // Main sway
+            float wave =
+                sin(phase + time);
+
+            // Small secondary wave to make it less robotic
+            float wave2 =
+                sin(
+                    phase * 1.73 -
+                    time * 1.31 +
+                    worldPos.y * 0.7
+                );
+
+            float wobble =
+                wave * 0.7 +
+                wave2 * 0.3;
+
+            // Optional vertex-color red mask.
+            // Red = 1 moves fully
+            // Red = 0 stays pinned
+            float vertexMask = v.color.r;
+
+            float windMask =
+                lerp(
+                    1.0,
+                    vertexMask,
+                    _UseVertexMask
+                );
+
+            float amount =
+                wobble *
+                _WindStrength *
+                windMask;
+
+            // Move mostly horizontally with a tiny vertical wobble.
+            float3 worldOffset;
+
+            worldOffset.x =
+                windDir.x * amount;
+
+            worldOffset.z =
+                windDir.y * amount;
+
+            worldOffset.y =
+                amount * _WindVertical;
+
+            // Convert world-space offset back to object space.
+            float3 objectOffset =
+                mul(
+                    (float3x3)unity_WorldToObject,
+                    worldOffset
+                );
+
+            v.vertex.xyz += objectOffset;
+        }
+
+
+        // ------------------------------------------------
+        // HASH DITHER
         // ------------------------------------------------
 
         float HashDither(float2 pixel)
@@ -112,7 +220,6 @@ Shader "Custom/Vines_DitherCutout_Modes"
 
         float BlueNoiseDither(float2 pixel)
         {
-            // Assumes noise texture tiles.
             float2 uv =
                 pixel / 64.0;
 

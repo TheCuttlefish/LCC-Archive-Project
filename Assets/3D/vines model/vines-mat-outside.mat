@@ -101,6 +101,13 @@ Material:
     - _SpecularHighlights: 1
     - _SrcBlend: 1
     - _UVSec: 0
+    - _UseVertexMask: 0
+    - _WindDirectionX: 0
+    - _WindDirectionZ: 0.448
+    - _WindFrequency: 2
+    - _WindSpeed: 0.62
+    - _WindStrength: 0.02
+    - _WindVertical: 0.806
     - _ZWrite: 1
     m_Colors:
     - _CameraFadeParams: {r: 0, g: Infinity, b: 0, a: 0}

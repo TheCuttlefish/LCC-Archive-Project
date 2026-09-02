@@ -7,7 +7,7 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: vines-mat
+  m_Name: vines-mat-inside
   m_Shader: {fileID: 4800000, guid: 8172f5db7190d4f4fb97575b0ec7671c, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
@@ -103,6 +103,13 @@ Material:
     - _SpecularHighlights: 1
     - _SrcBlend: 1
     - _UVSec: 0
+    - _UseVertexMask: 0
+    - _WindDirectionX: 1
+    - _WindDirectionZ: 0.3
+    - _WindFrequency: 2
+    - _WindSpeed: 0
+    - _WindStrength: 0
+    - _WindVertical: 0.15
     - _ZWrite: 1
     m_Colors:
     - _CameraFadeParams: {r: 0, g: Infinity, b: 0, a: 0}

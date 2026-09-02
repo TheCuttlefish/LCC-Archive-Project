@@ -73,6 +73,13 @@ Material:
     - _SoftParticlesFarFadeDistance: 1
     - _SoftParticlesNearFadeDistance: 0
     - _SrcBlend: 1
+    - _UseVertexMask: 0
+    - _WindDirectionX: 0
+    - _WindDirectionZ: -0.001
+    - _WindFrequency: 2.82
+    - _WindSpeed: 1.13
+    - _WindStrength: 0.03
+    - _WindVertical: 0.833
     - _ZWrite: 1
     m_Colors:
     - _CameraFadeParams: {r: 0, g: Infinity, b: 0, a: 0}
