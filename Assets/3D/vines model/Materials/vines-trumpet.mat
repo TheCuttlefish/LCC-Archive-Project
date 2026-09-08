@@ -76,8 +76,8 @@ Material:
     - _UseVertexMask: 0
     - _WindDirectionX: 0
     - _WindDirectionZ: -0.001
-    - _WindFrequency: 2.82
-    - _WindSpeed: 1.13
+    - _WindFrequency: 2.2
+    - _WindSpeed: 0.6
     - _WindStrength: 0.03
     - _WindVertical: 0.833
     - _ZWrite: 1
