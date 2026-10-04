@@ -1,8 +1,12 @@
-Shader "Custom/BoxDecalBuiltIn_SurfaceBlend_Safe"
+Shader "Custom/BoxDecalBuiltIn_RadialFade_Wet"
 {
     Properties
     {
         _MainTex ("Decal Texture", 2D) = "white" {}
+
+        //------------------------------------------------
+        // COLOUR VARIATION
+        //------------------------------------------------
 
         _ColorA ("Color A", Color) = (1.0, 0.25, 0.02, 1)
         _ColorB ("Color B", Color) = (1.0, 0.75, 0.10, 1)
@@ -10,20 +14,45 @@ Shader "Custom/BoxDecalBuiltIn_SurfaceBlend_Safe"
         _ColorSpread ("Color Spread", Range(0,1)) = 1.0
         _SeedScale ("Seed Scale", Range(0.01,10)) = 1.0
 
+
+        //------------------------------------------------
+        // SURFACE ANGLE
+        //------------------------------------------------
+
         _UpDotCutoff ("Up Dot Cutoff", Range(-1,1)) = 0.0
         _UpDotSpread ("Up Dot Spread", Range(0.001,1)) = 0.25
 
+
+        //------------------------------------------------
+        // GLOBAL ALPHA
+        //------------------------------------------------
+
         _Alpha ("Alpha", Range(0,1)) = 1.0
 
-        _BoxFeather ("Box Feather", Range(0,0.5)) = 0.05
 
-        // NEW:
-        // Extends the shader's accepted projector bounds
-        // without physically changing the cube.
-        _BoxPadding ("Box Padding", Range(0,0.5)) = 0.0
+        //------------------------------------------------
+        // TEXTURE RADIAL FADE
+        //------------------------------------------------
+
+        _FadeRadius ("Fade Radius", Range(0,1.5)) = 1.0
+        _FadeSpread ("Fade Spread", Range(0.001,1)) = 0.15
+
+
+        //------------------------------------------------
+        // SURFACE COLOUR
+        //------------------------------------------------
 
         _SurfaceBlend ("Surface Blend", Range(0,1)) = 1.0
         _SurfaceDarkening ("Surface Darkening", Range(0,1)) = 0.5
+
+
+        //------------------------------------------------
+        // WET SPECULAR
+        //------------------------------------------------
+
+        _WetSmoothness ("Wet Smoothness", Range(0,1)) = 0.7
+        _WetSpecular ("Wet Specular", Range(0,1)) = 0.5
+        _WetSpecularColor ("Wet Specular Color", Color) = (1,1,1,1)
     }
 
 
@@ -45,10 +74,8 @@ Shader "Custom/BoxDecalBuiltIn_SurfaceBlend_Safe"
         Pass
         {
             ZWrite Off
-            ZTest Greater
-
-            // Important for camera-inside-volume situations.
-            Cull Off
+            ZTest Always
+            Cull Front
 
             Blend SrcAlpha OneMinusSrcAlpha
 
@@ -62,11 +89,19 @@ Shader "Custom/BoxDecalBuiltIn_SurfaceBlend_Safe"
             #include "UnityCG.cginc"
 
 
+            //------------------------------------------------
+            // TEXTURES
+            //------------------------------------------------
+
             sampler2D _MainTex;
             float4 _MainTex_ST;
 
             sampler2D _DecalBackground;
 
+
+            //------------------------------------------------
+            // PROPERTIES
+            //------------------------------------------------
 
             fixed4 _ColorA;
             fixed4 _ColorB;
@@ -79,12 +114,20 @@ Shader "Custom/BoxDecalBuiltIn_SurfaceBlend_Safe"
 
             float _Alpha;
 
-            float _BoxFeather;
-            float _BoxPadding;
+            float _FadeRadius;
+            float _FadeSpread;
 
             float _SurfaceBlend;
             float _SurfaceDarkening;
 
+            float _WetSmoothness;
+            float _WetSpecular;
+            fixed4 _WetSpecularColor;
+
+
+            //------------------------------------------------
+            // CAMERA BUFFERS
+            //------------------------------------------------
 
             UNITY_DECLARE_DEPTH_TEXTURE(
                 _CameraDepthTexture
@@ -93,6 +136,10 @@ Shader "Custom/BoxDecalBuiltIn_SurfaceBlend_Safe"
             sampler2D
                 _CameraDepthNormalsTexture;
 
+
+            //------------------------------------------------
+            // STRUCTS
+            //------------------------------------------------
 
             struct appdata
             {
@@ -106,7 +153,6 @@ Shader "Custom/BoxDecalBuiltIn_SurfaceBlend_Safe"
 
                 float4 screenPos : TEXCOORD0;
 
-                // Keep our non-perspective interpolation.
                 noperspective float3 ray : TEXCOORD1;
 
                 float4 grabPos : TEXCOORD2;
@@ -167,7 +213,7 @@ Shader "Custom/BoxDecalBuiltIn_SurfaceBlend_Safe"
 
 
                 //------------------------------------------------
-                // VIEW POSITION OF PROJECTOR VERTEX
+                // PROJECTOR VERTEX IN VIEW SPACE
                 //------------------------------------------------
 
                 float3 viewPos =
@@ -178,18 +224,6 @@ Shader "Custom/BoxDecalBuiltIn_SurfaceBlend_Safe"
 
                 //------------------------------------------------
                 // SAFE SIGNED Z
-                //
-                // OLD VERSION:
-                //
-                // max(0.0001, -viewPos.z)
-                //
-                // Problem:
-                // vertices behind the camera got clamped
-                // to +0.0001, producing enormous rays.
-                //
-                // NEW VERSION:
-                // preserve which side of the camera
-                // the vertex is on.
                 //------------------------------------------------
 
                 float z =
@@ -209,6 +243,10 @@ Shader "Custom/BoxDecalBuiltIn_SurfaceBlend_Safe"
                         0.0001
                     );
 
+
+                //------------------------------------------------
+                // RECONSTRUCTION RAY
+                //------------------------------------------------
 
                 o.ray =
                     viewPos *
@@ -238,7 +276,7 @@ Shader "Custom/BoxDecalBuiltIn_SurfaceBlend_Safe"
 
 
                 //------------------------------------------------
-                // SCENE DEPTH
+                // CAMERA DEPTH
                 //------------------------------------------------
 
                 float rawDepth =
@@ -320,14 +358,13 @@ Shader "Custom/BoxDecalBuiltIn_SurfaceBlend_Safe"
                         mul(
                             (float3x3)
                             unity_CameraToWorld,
-
                             viewNormal
                         )
                     );
 
 
                 //------------------------------------------------
-                // WORLD-UP FILTER
+                // WORLD-UP DOT
                 //------------------------------------------------
 
                 float upDot =
@@ -340,6 +377,10 @@ Shader "Custom/BoxDecalBuiltIn_SurfaceBlend_Safe"
                         )
                     );
 
+
+                //------------------------------------------------
+                // SURFACE ANGLE FADE
+                //------------------------------------------------
 
                 float dotFade =
                     smoothstep(
@@ -368,21 +409,24 @@ Shader "Custom/BoxDecalBuiltIn_SurfaceBlend_Safe"
 
 
                 //------------------------------------------------
-                // BOX EXTENT + PADDING
-                //
-                // Normal cube extent = 0.5
-                //
-                // Padding 0.10:
-                // accepted extent becomes 0.60
+                // PROJECTOR SAFETY BOUNDS
                 //------------------------------------------------
+
+                const float safetyPadding =
+                    0.02;
+
+
+                const float normalExtent =
+                    0.5;
+
 
                 float boxExtent =
-                    0.5 +
-                    _BoxPadding;
+                    normalExtent +
+                    safetyPadding;
 
 
                 //------------------------------------------------
-                // PROJECTOR BOUNDS
+                // HARD PROJECTOR BOUNDS
                 //------------------------------------------------
 
                 clip(
@@ -404,65 +448,63 @@ Shader "Custom/BoxDecalBuiltIn_SurfaceBlend_Safe"
 
 
                 //------------------------------------------------
-                // BOX FEATHER
-                //
-                // Feather relative to our padded extent.
-                //------------------------------------------------
-
-                float3 distanceToEdge =
-                    boxExtent -
-                    abs(localPos);
-
-
-                float nearestEdge =
-                    min(
-                        distanceToEdge.x,
-
-                        min(
-                            distanceToEdge.y,
-                            distanceToEdge.z
-                        )
-                    );
-
-
-                float boxFade =
-                    1.0;
-
-
-                if (_BoxFeather > 0.0001)
-                {
-                    boxFade =
-                        smoothstep(
-                            0.0,
-                            _BoxFeather,
-                            nearestEdge
-                        );
-                }
-
-
-                //------------------------------------------------
                 // DECAL UV
-                //
-                // IMPORTANT:
-                // Still based on original 0.5 cube UV area.
-                //
-                // Padding does NOT stretch the decal texture.
                 //------------------------------------------------
 
-                float2 uv =
+                float2 baseUV =
                     localPos.xy +
                     0.5;
 
 
-                uv =
+                //------------------------------------------------
+                // RADIAL DISTANCE
+                //------------------------------------------------
+
+                float2 centeredUV =
+                    baseUV -
+                    0.5;
+
+
+                float radialDistance =
+                    length(
+                        centeredUV
+                    ) * 2.0;
+
+
+                //------------------------------------------------
+                // RADIAL FADE
+                //------------------------------------------------
+
+                float fadeStart =
+                    max(
+                        0.0,
+                        _FadeRadius -
+                        _FadeSpread
+                    );
+
+
+                float textureFade =
+                    1.0 -
+                    smoothstep(
+                        fadeStart,
+                        _FadeRadius,
+                        radialDistance
+                    );
+
+
+                //------------------------------------------------
+                // TEXTURE TRANSFORM
+                //------------------------------------------------
+
+                float2 uv =
                     TRANSFORM_TEX(
-                        uv,
+                        baseUV,
                         _MainTex
                     );
 
 
                 //------------------------------------------------
-                // DECAL TEXTURE
+                // READ DECAL
                 //------------------------------------------------
 
                 fixed4 tex =
@@ -472,6 +514,10 @@ Shader "Custom/BoxDecalBuiltIn_SurfaceBlend_Safe"
                     );
 
 
+                //------------------------------------------------
+                // TRANSPARENT PIXELS
+                //------------------------------------------------
+
                 clip(
                     tex.a -
                     0.001
@@ -479,7 +525,7 @@ Shader "Custom/BoxDecalBuiltIn_SurfaceBlend_Safe"
 
 
                 //------------------------------------------------
-                // PROJECTOR POSITION
+                // PROJECTOR WORLD POSITION
                 //------------------------------------------------
 
                 float3 projectorPosition =
@@ -491,7 +537,7 @@ Shader "Custom/BoxDecalBuiltIn_SurfaceBlend_Safe"
 
 
                 //------------------------------------------------
-                // RANDOM COLOUR
+                // RANDOM VALUE
                 //------------------------------------------------
 
                 float randomValue =
@@ -499,6 +545,10 @@ Shader "Custom/BoxDecalBuiltIn_SurfaceBlend_Safe"
                         projectorPosition
                     );
 
+
+                //------------------------------------------------
+                // RANDOM COLOUR
+                //------------------------------------------------
 
                 float colourT =
                     lerp(
@@ -517,7 +567,7 @@ Shader "Custom/BoxDecalBuiltIn_SurfaceBlend_Safe"
 
 
                 //------------------------------------------------
-                // DECAL COLOUR
+                // BASE DECAL COLOUR
                 //------------------------------------------------
 
                 float3 decalColor =
@@ -526,7 +576,7 @@ Shader "Custom/BoxDecalBuiltIn_SurfaceBlend_Safe"
 
 
                 //------------------------------------------------
-                // SURFACE COLOUR
+                // READ SURFACE COLOUR
                 //------------------------------------------------
 
                 float3 surfaceColor =
@@ -592,9 +642,121 @@ Shader "Custom/BoxDecalBuiltIn_SurfaceBlend_Safe"
                     tex.a *
                     randomColour.a *
                     dotFade *
-                    boxFade *
+                    textureFade *
                     _Alpha;
 
+
+                //================================================
+                // WET SPECULAR
+                //================================================
+
+
+                //------------------------------------------------
+                // VIEW DIRECTION
+                //------------------------------------------------
+
+                float3 viewDir =
+                    normalize(
+                        _WorldSpaceCameraPos -
+                        worldPos
+                    );
+
+
+                //------------------------------------------------
+                // LIGHT DIRECTION
+                //------------------------------------------------
+
+                float3 lightDir =
+                    normalize(
+                        _WorldSpaceLightPos0.xyz
+                    );
+
+
+                //------------------------------------------------
+                // HALF VECTOR
+                //------------------------------------------------
+
+                float3 halfDir =
+                    normalize(
+                        lightDir +
+                        viewDir
+                    );
+
+
+                //------------------------------------------------
+                // SPECULAR ANGLES
+                //------------------------------------------------
+
+                float NdotH =
+                    saturate(
+                        dot(
+                            worldNormal,
+                            halfDir
+                        )
+                    );
+
+
+                float NdotL =
+                    saturate(
+                        dot(
+                            worldNormal,
+                            lightDir
+                        )
+                    );
+
+
+                //------------------------------------------------
+                // SMOOTHNESS
+                //
+                // 0 = broad / rough
+                // 1 = tight / smooth
+                //------------------------------------------------
+
+                float specPower =
+                    lerp(
+                        4.0,
+                        256.0,
+                        _WetSmoothness
+                    );
+
+
+                //------------------------------------------------
+                // SPECULAR RESPONSE
+                //------------------------------------------------
+
+                float wetSpecular =
+                    pow(
+                        NdotH,
+                        specPower
+                    );
+
+
+                wetSpecular *=
+                    NdotL;
+
+
+                //------------------------------------------------
+                // WET MASK
+                //------------------------------------------------
+
+                float wetMask =
+                    finalAlpha;
+
+
+                //------------------------------------------------
+                // APPLY COLOURED WET SPECULAR
+                //------------------------------------------------
+
+                finalRGB +=
+                    wetSpecular *
+                    _WetSpecular *
+                    _WetSpecularColor.rgb *
+                    wetMask;
+
+
+                //------------------------------------------------
+                // OUTPUT
+                //------------------------------------------------
 
                 return fixed4(
                     finalRGB,

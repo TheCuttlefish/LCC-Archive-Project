@@ -74,22 +74,28 @@ Material:
     m_Ints: []
     m_Floats:
     - _Alpha: 1
+    - _AlphaContrast: 1.7
     - _AngleCutoff: 0.43
     - _AngleFade: 0.01
     - _AngleLimit: 0.28
     - _AngleStart: 0.39
-    - _BoxFeather: 0.12
-    - _BoxPadding: 0.09
+    - _BoxFeather: 0.5
+    - _BoxPadding: 0
     - _BumpScale: 1
-    - _ColorSpread: 0.35
+    - _ColorSpread: 1
+    - _Coverage: 1.36
     - _Cutoff: 0.5
+    - _DepthFeather: 0.27
     - _DetailNormalMapScale: 1
     - _DownDotCutoff: -0.35
     - _DownDotSpread: 0.24
     - _DstBlend: 0
+    - _FadeRadius: 0.96
+    - _FadeSpread: 0.43
     - _GlossMapScale: 1
     - _Glossiness: 0.5
     - _GlossyReflections: 1
+    - _MaterialStrength: 2
     - _Metallic: 0
     - _Mode: 0
     - _NoiseScale: 17.4
@@ -98,7 +104,7 @@ Material:
     - _NormalStrength: 1.94
     - _OcclusionStrength: 1
     - _Parallax: 0.02
-    - _SeedScale: 8.6
+    - _SeedScale: 3
     - _Smoothness: 0.49
     - _SmoothnessTextureChannel: 0
     - _SpecularHighlights: 1
@@ -106,17 +112,21 @@ Material:
     - _SrcBlend: 1
     - _StretchFade: 0.126
     - _StretchLimit: 0.122
-    - _SurfaceBlend: 0
-    - _SurfaceDarkening: 1
+    - _SurfaceBlend: 0.86
+    - _SurfaceDarkening: 0
     - _UVSec: 0
-    - _UpDotCutoff: 1
-    - _UpDotSpread: 0.74
+    - _UpDotCutoff: 0.51
+    - _UpDotSpread: 0.32
     - _WetDarken: 0.28
+    - _WetNormalStability: 0
+    - _WetSmoothness: 0.69
+    - _WetSpecular: 0.71
     - _ZWrite: 1
     m_Colors:
     - _Color: {r: 0.78436655, g: 0.52760077, b: 0, a: 0.8039216}
-    - _ColorA: {r: 0.20893455, g: 1, b: 0, a: 1}
-    - _ColorB: {r: 1, g: 0.87215304, b: 0, a: 1}
+    - _ColorA: {r: 1, g: 0, b: 0.0013985634, a: 1}
+    - _ColorB: {r: 0.97259206, g: 1, b: 0.4083557, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _SpecularColor: {r: 1, g: 1, b: 1, a: 1}
+    - _WetSpecularColor: {r: 1, g: 1, b: 1, a: 1}
   m_BuildTextureStacks: []
