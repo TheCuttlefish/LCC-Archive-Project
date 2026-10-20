@@ -52,7 +52,7 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _MainTex:
-        m_Texture: {fileID: 2800000, guid: fe66a0b071d99314685ab84bd98bdd71, type: 3}
+        m_Texture: {fileID: 2800000, guid: e624f31746193b94d97d40332aad134a, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _MetallicGlossMap:
@@ -73,7 +73,7 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - _Alpha: 1
+    - _Alpha: 0.599
     - _AlphaContrast: 1.7
     - _AngleCutoff: 0.43
     - _AngleFade: 0.01
@@ -90,8 +90,8 @@ Material:
     - _DownDotCutoff: -0.35
     - _DownDotSpread: 0.24
     - _DstBlend: 0
-    - _FadeRadius: 0.96
-    - _FadeSpread: 0.43
+    - _FadeRadius: 1.5
+    - _FadeSpread: 0.205
     - _GlossMapScale: 1
     - _Glossiness: 0.5
     - _GlossyReflections: 1
@@ -104,7 +104,7 @@ Material:
     - _NormalStrength: 1.94
     - _OcclusionStrength: 1
     - _Parallax: 0.02
-    - _SeedScale: 3
+    - _SeedScale: 7.9
     - _Smoothness: 0.49
     - _SmoothnessTextureChannel: 0
     - _SpecularHighlights: 1
@@ -112,20 +112,20 @@ Material:
     - _SrcBlend: 1
     - _StretchFade: 0.126
     - _StretchLimit: 0.122
-    - _SurfaceBlend: 0.86
-    - _SurfaceDarkening: 0
+    - _SurfaceBlend: 1
+    - _SurfaceDarkening: 1
     - _UVSec: 0
-    - _UpDotCutoff: 0.51
-    - _UpDotSpread: 0.32
+    - _UpDotCutoff: 0.77
+    - _UpDotSpread: 0.649
     - _WetDarken: 0.28
     - _WetNormalStability: 0
-    - _WetSmoothness: 0.69
-    - _WetSpecular: 0.71
+    - _WetSmoothness: 0.408
+    - _WetSpecular: 0.191
     - _ZWrite: 1
     m_Colors:
     - _Color: {r: 0.78436655, g: 0.52760077, b: 0, a: 0.8039216}
-    - _ColorA: {r: 1, g: 0, b: 0.0013985634, a: 1}
-    - _ColorB: {r: 0.97259206, g: 1, b: 0.4083557, a: 1}
+    - _ColorA: {r: 0.76280314, g: 0.57294345, b: 0.09355123, a: 1}
+    - _ColorB: {r: 0.46762046, g: 0.48787057, b: 0.023012701, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _SpecularColor: {r: 1, g: 1, b: 1, a: 1}
     - _WetSpecularColor: {r: 1, g: 1, b: 1, a: 1}
